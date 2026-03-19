@@ -1,0 +1,92 @@
+version: "3.9"
+
+x-fastapi-and-worker-base: &base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  env_file:
+    - .env
+  environment:
+    DB_HOST: db
+    DB_PORT: 5432
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+
+  fastapi:
+    <<: *base
+    container_name: fastapi
+    image: crypto_mate:v0
+    ports:
+      - "8080:8000"
+    command: gunicorn -k uvicorn.workers.UvicornWorker app.main:app -w 2 -b 0.0.0.0:8000
+    mem_limit: 512m
+    cpus: 1.0
+
+  db:
+    image: postgres:13-alpine
+    container_name: db
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    mem_limit: 1g
+    cpus: 1.5
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: 512m
+    cpus: 0.5
+
+  simple_task_worker:
+    <<: *base
+    container_name: simple_task_worker
+    command: celery -A app.workers.celery_app.celery_app worker -Q simple_task_queue --concurrency=2 --loglevel=info
+    mem_limit: 512m
+    cpus: 1.0
+
+  heavy_task_worker:
+    <<: *base
+    container_name: heavy_task_worker
+    command: celery -A app.workers.celery_app.celery_app worker -Q heavy_task_queue --concurrency=1 --loglevel=info
+    mem_limit: 512m
+    cpus: 1.0
+
+  celery_beat:
+    <<: *base
+    container_name: celery_beat
+    command: celery -A app.workers.celery_app.celery_app beat --schedule /celerybeat_data/celerybeat-schedule --loglevel=info
+    volumes:
+      - celerybeat_data:/celerybeat_data
+    mem_limit: 256m
+    cpus: 0.5
+
+volumes:
+  pg_data:
+  redis_data:
+  celerybeat_data:

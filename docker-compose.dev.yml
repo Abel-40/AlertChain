@@ -1,0 +1,123 @@
+x-fastapi-and-worker-base: &base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - .env
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+
+  fastapi:
+    <<: *base
+    image: crypto_mate:v0
+    container_name: fastapi
+    restart: unless-stopped
+    ports:
+      - "8080:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - .:/backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  db:
+    image: postgres:13-alpine
+    container_name: db
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+    volumes:
+      - pg_data:/var/lib/postgresql/data   
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    restart: unless-stopped   
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  simple_task_worker:
+    <<: *base
+    container_name: simple_task_worker
+    command: celery -A app.workers.celery_app.celery_app worker -Q simple_task_queue --loglevel=info --concurrency=2
+
+  heavy_task_worker:
+    <<: *base
+    container_name: heavy_task_worker
+    command: celery -A app.workers.celery_app.celery_app worker -Q heavy_task_queue --loglevel=info --concurrency=1
+
+  celery_beat:
+    <<: *base
+    container_name: celery_beat
+    command: celery -A app.workers.celery_app.celery_app beat --loglevel=info --schedule /celerybeat_data/celerybeat-schedule  
+    volumes:
+      - ./celerybeat_data:/celerybeat_data
+
+  # Monitoring tools (dev only)
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis_insight_data:/data
+    restart: unless-stopped
+
+  flower:
+    image: mher/flower
+    depends_on:
+      - redis
+      - simple_task_worker
+      - heavy_task_worker
+    command: celery --broker=redis://redis:6379/0 flower --port=5555
+    ports:
+      - "5555:5555"
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    env_file:
+      - .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}   
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  redis_data:
+  redis_insight_data:
+  pgadmin_data:
