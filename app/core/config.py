@@ -12,7 +12,7 @@ class Settings(BaseSettings):
   REDIS_FOR_BROKER:str
   REDIS_FOR_BACKEND:str
   ACCESS_TOKEN_KEY:str
-  REFRESh_TOKEN_KEY:str
+  REFRESH_TOKEN_KEY:str
   ALGO:str
   @property
   def DB_URL(self):

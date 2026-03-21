@@ -18,3 +18,7 @@ class UserOut(UserBase):
 class UserInDB(UserBase):
     hashed_password: str
     model_config = ConfigDict(from_attributes=True)
+
+class UserLogin(BaseModel):
+    email:EmailStr
+    password:str
