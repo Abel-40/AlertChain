@@ -14,6 +14,12 @@ class Settings(BaseSettings):
   ACCESS_TOKEN_KEY:str
   REFRESH_TOKEN_KEY:str
   ALGO:str
+  EMAIL:str
+  MAIL_PORT:str
+  MAIL_SERVER:str
+  MAIL_PASSWORD:str
+  MAIL_FROM_NAME:str
+  
   @property
   def DB_URL(self):
     url = f"postgresql+asyncpg://{self.DB_USERNAME}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"

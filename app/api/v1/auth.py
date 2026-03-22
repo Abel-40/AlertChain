@@ -13,6 +13,7 @@ from datetime import timedelta
 from app.core.config import settings
 from fastapi.security import OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
+from app.workers.celery_app import check_smtp_task,send_email
 import jwt
 
 router = APIRouter()
@@ -20,6 +21,7 @@ router = APIRouter()
 async def register_user(user_data:UserCreate, db:AsyncSession = Depends(get_db)):
   try:
     user = await create_user(db=db,user_data=user_data)
+    send_email.apply_async(args=[user_data.email,user_data.full_name],queue="simple_task_queue",priority=7)
     return success_response(
       status_code=201,
       message="user successfully sign up!!",
@@ -103,3 +105,8 @@ async def refresh_login(request: Request, db: AsyncSession = Depends(get_db)):
 
     except InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+   
+@router.get("/check_email/") 
+async def check_smtp():
+    print(check_smtp_task.run())
+    
