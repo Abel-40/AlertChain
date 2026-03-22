@@ -1,9 +1,269 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes"/>
+    <title>Welcome to AlertChain | Crypto Alert System</title>
+    <style type="text/css">
+        /* Client-specific Styles & Reset */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        
+        /* Base body styles - no background fill, just centering */
+        body { 
+            height: 100% !important; 
+            margin: 0 !important; 
+            padding: 20px 0 !important; 
+            width: 100% !important; 
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #eef2f9;
+            text-align: center;
+        }
+        
+        .ExternalClass, .ReadMsgBody { width: 100%; background-color: #eef2f9; }
+        a, a:link, a:visited { color: #00a86b; text-decoration: none; }
+        
+        .button {
+            background: linear-gradient(135deg, #00a86b 0%, #008c58 100%);
+            color: #ffffff !important;
+            padding: 12px 28px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 15px;
+            display: inline-block;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        
+        .feature-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 20px;
+            padding: 20px 18px;
+        }
+        
+        /* Responsive Styles */
+        @media screen and (max-width: 600px) {
+            .responsive-column { 
+                width: 100% !important; 
+                display: block !important; 
+                padding: 8px 0 !important;
+            }
+            .feature-card { 
+                padding: 16px 14px !important; 
+                margin-bottom: 12px !important;
+            }
+            .button { 
+                padding: 12px 24px !important; 
+                font-size: 14px !important; 
+                display: inline-block !important; 
+            }
+            h1 { 
+                font-size: 28px !important; 
+                line-height: 1.3 !important;
+            }
+            .hero-title {
+                font-size: 32px !important;
+            }
+            .inner-padding { 
+                padding-left: 20px !important; 
+                padding-right: 20px !important; 
+            }
+            .content-table {
+                width: 90% !important;
+            }
+            .greeting-text {
+                font-size: 16px !important;
+            }
+            .description-text {
+                font-size: 14px !important;
+            }
+            .card-title {
+                font-size: 14px !important;
+            }
+            .card-text {
+                font-size: 12px !important;
+            }
+            .tips-text {
+                font-size: 12px !important;
+            }
+            .footer-text {
+                font-size: 10px !important;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .feature-card { 
+                padding: 14px 12px !important; 
+            }
+            h1 { 
+                font-size: 24px !important; 
+            }
+            .hero-title {
+                font-size: 28px !important;
+            }
+            .inner-padding { 
+                padding-left: 16px !important; 
+                padding-right: 16px !important; 
+            }
+            .button { 
+                padding: 10px 20px !important; 
+                font-size: 13px !important; 
+            }
+        }
+    </style>
+</head>
 <body>
-<h2>Welcome {{name}}</h2>
-
-<p>Your account has been successfully created.</p>
-
-<p>Thanks for joining our platform.</p>
+    <!-- Centered wrapper table with proper email client support -->
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #eef2f9; text-align: center;">
+        <tr>
+            <td align="center" style="padding: 30px 15px;">
+                <!-- MAIN CONTENT TABLE - centered with auto margins -->
+                <table align="center" border="0" cellpadding="0" cellspacing="0" width="520" class="content-table" style="width: 520px; max-width: 90%; background-color: #0a1022; border-radius: 28px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.08); margin: 0 auto;">
+                    
+                    <!-- HEADER SECTION -->
+                    <tr>
+                        <td style="padding: 28px 28px 16px 28px; border-bottom: 1px solid rgba(0, 168, 107, 0.2); background-color: #0a1022;" class="inner-padding">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="left" style="vertical-align: middle;">
+                                        <span style="color: #00a86b; font-size: 22px; font-weight: 800; letter-spacing: -0.3px;">
+                                            ⚡ AlertChain
+                                        </span>
+                                    </td>
+                                    <td align="right" style="vertical-align: middle;">
+                                        <span style="color: #6c7aa3; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">v1.0</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- WELCOME SECTION - simplified -->
+                    <tr>
+                        <td style="padding: 32px 28px 20px 28px; background-color: #0a1022;" class="inner-padding">
+                            <p style="text-transform: uppercase; border-left: 3px solid #00a86b; padding-left: 12px; letter-spacing: 1.5px; color: #00a86b; font-size: 10px; font-weight: 700; margin: 0 0 16px 0;">
+                                WELCOME ABOARD
+                            </p>
+                            <h1 style="font-size: 36px; margin: 0 0 12px 0; color: #ffffff; line-height: 1.2; font-weight: 700;" class="hero-title">
+                                Hello, <span style="color: #00a86b;">{{ name }}</span>
+                            </h1>
+                            <p style="font-size: 16px; line-height: 1.5; color: #cbd5e1; margin: 0 0 12px 0;" class="greeting-text">
+                                You're now connected to AlertChain — your intelligent crypto monitoring system.
+                            </p>
+                            <p style="font-size: 14px; line-height: 1.5; color: #94a3b8; margin: 0;" class="description-text">
+                                We track cryptocurrency prices in real-time and notify you instantly when your custom alerts trigger.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- FEATURE CARDS - reduced content -->
+                    <tr>
+                        <td style="padding: 8px 28px 12px 28px;" class="inner-padding">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td class="responsive-column" width="48%" valign="top" style="padding-right: 4%;">
+                                        <div class="feature-card">
+                                            <h3 style="color: #00a86b; margin: 0 0 8px 0; font-size: 14px; font-weight: 700;" class="card-title">📊 Live Prices</h3>
+                                            <p style="font-size: 13px; color: #cbd5e1; line-height: 1.4; margin: 0;" class="card-text">BTC, ETH, SOL + 500+ assets with real-time updates.</p>
+                                        </div>
+                                    </td>
+                                    <td class="responsive-column" width="48%" valign="top">
+                                        <div class="feature-card">
+                                            <h3 style="color: #00a86b; margin: 0 0 8px 0; font-size: 14px; font-weight: 700;" class="card-title">🔔 Smart Alerts</h3>
+                                            <p style="font-size: 13px; color: #cbd5e1; line-height: 1.4; margin: 0;" class="card-text">Set price thresholds. Get email + in-app notifications.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- HOW IT WORKS - simplified -->
+                    <tr>
+                        <td style="padding: 8px 28px 12px 28px;" class="inner-padding">
+                            <div style="background: rgba(0, 168, 107, 0.05); border-radius: 20px; padding: 16px 20px; border: 1px solid rgba(0, 168, 107, 0.15);">
+                                <p style="font-size: 13px; line-height: 1.5; color: #cbd5e1; margin: 0;">
+                                    <strong style="color: #00a86b;">⚙️ How it works:</strong> Add assets → create alerts → we monitor prices → you get notified instantly.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- CTA BUTTON -->
+                    <tr>
+                        <td align="center" style="padding: 24px 28px 16px 28px;" class="inner-padding">
+                            <a href="{{ dashboard_url }}" class="button">Launch Dashboard →</a>
+                            <p style="font-size: 10px; color: #6c7aa3; margin: 16px 0 0 0; letter-spacing: 0.3px;">
+                                Secure access to your alert center
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- QUICK TIPS - condensed -->
+                    <tr>
+                        <td style="padding: 8px 28px 12px 28px;" class="inner-padding">
+                            <table width="100%" style="background: #0f172a; border-radius: 18px; padding: 14px 18px;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 11px; font-weight: 600; color: #00a86b; margin: 0 0 8px 0; letter-spacing: 0.5px;" class="tips-text">✨ QUICK START</p>
+                                        <p style="font-size: 12px; color: #cbd5e1; line-height: 1.4; margin: 0 0 4px 0;" class="tips-text">• Add assets to your watchlist</p>
+                                        <p style="font-size: 12px; color: #cbd5e1; line-height: 1.4; margin: 0 0 4px 0;" class="tips-text">• Create price alerts (above/below)</p>
+                                        <p style="font-size: 12px; color: #cbd5e1; line-height: 1.4; margin: 0;" class="tips-text">• Get instant email notifications</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- DIVIDER -->
+                    <tr>
+                        <td style="padding: 8px 28px 4px 28px;" class="inner-padding">
+                            <table width="100%" style="border-top: 1px solid rgba(0, 168, 107, 0.15);">
+                                <tr><td style="padding: 12px 0 4px;"><p style="text-align: center; font-size: 9px; color: #5c6892; letter-spacing: 1px;">⚡ 24/7 MARKET MONITORING ⚡</p></td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- FOOTER - simplified -->
+                    <tr>
+                        <td style="padding: 20px 28px 28px 28px; background-color: #080e1c; border-top-left-radius: 20px; border-top-right-radius: 20px;" class="inner-padding">
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding-bottom: 12px;">
+                                        <p style="color: #5c6892; font-size: 9px; font-weight: 500; margin: 0 0 6px 0;" class="footer-text">
+                                            AlertChain — Real-time crypto alerting system
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center">
+                                        <p style="font-size: 9px; color: #6c7aa3; line-height: 1.4; margin: 0 0 10px 0;" class="footer-text">
+                                            &copy; 2026 AlertChain. All rights reserved.<br/>
+                                            Transactional email sent upon registration.
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center">
+                                        <table border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                                            <tr>
+                                                <td style="padding: 0 8px;"><a href="#" style="color: #7c8ab0; text-decoration: none; font-size: 9px;">Dashboard</a></td>
+                                                <td style="padding: 0 8px;"><a href="#" style="color: #7c8ab0; text-decoration: none; font-size: 9px;">Privacy</a></td>
+                                                <td style="padding: 0 8px;"><a href="#" style="color: #7c8ab0; text-decoration: none; font-size: 9px;">Support</a></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

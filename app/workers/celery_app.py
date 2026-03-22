@@ -36,7 +36,7 @@ def send_email(self,email:str,name:str):
     message = MessageSchema(
       subject="Welcome to crypto mate",
       recipients=[email],
-      template_body={"name":name},
+      template_body={"name":name,"dashboard_url":"http://127.0.0.0:3000/dashboard"},
       subtype=MessageType.html
     )
     fm = FastMail(conf)
