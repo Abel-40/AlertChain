@@ -1,7 +1,7 @@
 from fastapi import APIRouter,Depends, HTTPException, status,Request
 from fastapi.responses import JSONResponse
-from app.services.auth import create_user,authenticate_user,get_user_by_id
-from app.schemas.users import UserOut,UserCreate,UserLogin
+from app.services.auth import create_user,authenticate_user,get_user_by_id,social_signup
+from app.schemas.users import UserOut,UserCreate,UserLogin,ThirdPartyLogin
 from app.schemas.responses import APIResponse,TokenResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.db import get_db
@@ -105,6 +105,25 @@ async def refresh_login(request: Request, db: AsyncSession = Depends(get_db)):
 
     except InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    
+    
+@router.post("/social/signup")
+async def third_party_signup(user_data:ThirdPartyLogin, db:AsyncSession = Depends(get_db)):
+    user = await social_signup(user_data=user_data,db=db)
+    access_token = token_generator(data={"sub":str(user.id),"type":"access"},expire=timedelta(minutes=30),key=settings.ACCESS_TOKEN_KEY)
+    refresh_token = token_generator(data={"sub":str(user.id),"type":"refresh"},expire=timedelta(days=30),key=settings.REFRESH_TOKEN_KEY)
+    response =  JSONResponse(
+    status_code=200,
+    content=TokenResponse(access_token=access_token,token_type="Bearer").model_dump()
+)
+    response.set_cookie(
+    key="refresh_token",
+    value=refresh_token,
+    httponly=True,
+    secure=True,
+    max_age=3600 * 24 * 7
+    )
+    return response
    
 @router.get("/check_email/") 
 async def check_smtp():

@@ -21,10 +21,14 @@ class User(Base):
   __tablename__ = "users"
   id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
   email: Mapped[EmailStr] = mapped_column(String, unique=True, index=True,nullable=False)
-  full_name: Mapped[str] = mapped_column(String)
-  hashed_password: Mapped[str] = mapped_column(String)
+  full_name: Mapped[str] = mapped_column(String,nullable=True)
+  hashed_password: Mapped[str] = mapped_column(String,nullable=True)
   created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-  updated_at:Mapped[datetime] = mapped_column(DateTime, onupdate=func.now())
+  updated_at: Mapped[datetime] = mapped_column(
+      DateTime,
+      default=datetime.utcnow,
+      onupdate=datetime.utcnow
+  )
 
   alerts:Mapped[List["AlertRule"]] = relationship("AlertRule",back_populates="user",lazy="selectin",passive_deletes=True)
   auth_accounts:Mapped[List[AuthAccount]] = relationship("AuthAccount",back_populates="user",passive_deletes=True)

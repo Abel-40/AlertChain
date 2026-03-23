@@ -22,3 +22,9 @@ class UserInDB(UserBase):
 class UserLogin(BaseModel):
     email:EmailStr
     password:str
+    
+    
+class ThirdPartyLogin(BaseModel):
+  provider:str
+  email:EmailStr
+  provider_account_id:str
