@@ -16,7 +16,7 @@ from jwt.exceptions import InvalidTokenError
 from app.workers.celery_app import check_smtp_task,send_email
 import jwt
 
-router = APIRouter()
+router = APIRouter(prefix="/auth",tags=["auth"])
 @router.post("/register_user/",response_model=APIResponse[UserOut],dependencies=[Depends(rate_limit(limit=5,window=60))])
 async def register_user(user_data:UserCreate, db:AsyncSession = Depends(get_db)):
   try:

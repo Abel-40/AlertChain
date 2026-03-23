@@ -1,6 +1,16 @@
-from fastapi import Request, HTTPException,status
+from fastapi import Request, HTTPException,status,Depends
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.db import get_db
+from app.services.auth import get_user_by_id
+from app.core.config import settings
+from jwt.exceptions import PyJWTError
 import uuid
 import time
+import jwt
+
+auth_scheme = OAuth2PasswordBearer(tokenUrl="/alertchain/auth/login/")
+
 
 def rate_limit(limit: int, window: int):
   async def actual_dependency(request: Request):
@@ -24,3 +34,19 @@ def rate_limit(limit: int, window: int):
         )
   return actual_dependency
   
+  
+async def get_current_user(token:str = Depends(auth_scheme),db:AsyncSession= Depends(get_db)):
+    credentials_exception = HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Invalid credentials")
+    try:
+        payload = jwt.decode(token, settings.ACCESS_TOKEN_KEY, algorithms=[settings.ALGO])
+        user_id = payload.get("sub")
+        if not user_id or payload.get("type") != "access":
+            raise credentials_exception
+        user = await get_user_by_id(db=db,id=user_id)
+        if not user:
+            raise credentials_exception
+        return user
+    except PyJWTError as e:
+        print("JWT ERROR TYPE:", type(e).__name__)
+        print("JWT ERROR MSG:", str(e))
+        raise credentials_exception

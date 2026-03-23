@@ -7,7 +7,6 @@ from app.api.v1 import auth
 from app.utils.response import error_response
 from fastapi.exceptions import RequestValidationError
 
-
 Rate_Limit_Script = """
 local key = KEYS[1]
 local window_start = tonumber(ARGV[1])
@@ -48,7 +47,7 @@ async def lifespan(app:FastAPI):
       print("Redis connection closed")
     
 app = FastAPI(lifespan=lifespan)
-
+app.include_router(router=auth.router, prefix="/alertchain")
 
 @app.exception_handler(HTTPException)
 def http_exception_handler(request:Request,exc:HTTPException):
@@ -73,20 +72,7 @@ def validation_error_handler(request: Request, exc: RequestValidationError):
 def general_exception_handler(request:Request,exc:Exception):
   return error_response(status_code=500,message="Something went wrong please try again later!!!")
 
-app.include_router(router=auth.router, prefix="/auth")
+
 @app.get("/health/")
 async def health():
   return {"server_health":"GOOD"}
-
-@app.post("/set/")
-async def set_data(request:Request,name:str):
-  redis_client = request.app.state.redis
-  await redis_client.set("name",name)
-  return {"status":"okay"}
-
-
-@app.get("/get_data/")
-async def get_data(request:Request):
-  redis_client = request.app.state.redis
-  data = await redis_client.get("name")
-  return {"name":data}
