@@ -41,8 +41,8 @@ class User(Base):
 class Asset(Base):
   __tablename__ = "assets"
   id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-  symbol: Mapped[str] = mapped_column(String, unique=True)
-  name: Mapped[str] = mapped_column(String, unique=True, index=True)
+  symbol: Mapped[str] = mapped_column(String, index=True)
+  name: Mapped[str] = mapped_column(String, index=True)
   coingecko_id: Mapped[str] = mapped_column(String, unique=True)
   created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
   

@@ -6,7 +6,7 @@ from pydantic import EmailStr
 from app.exceptions.users import UserAlreadyExistError, InvalidCredentialsError
 from app.core.auth import hash_password,verify_password
 from uuid import UUID
-from app.workers.celery_app import send_email
+from app.tasks.alerts import send_email
 
 async def get_user_by_id(db:AsyncSession, id:UUID):
   stmt = select(User).where(User.id == id)
@@ -57,11 +57,11 @@ async def social_signup(user_data: ThirdPartyLogin, db: AsyncSession):
     db.add(user)
     await db.flush()
     await db.refresh(user)
+    send_email.apply_async(args=[user_data.email,""],queue="simple_task_queue",priority=7)
     
   auth_account = AuthAccount(provider=user_data.provider,provider_account_id=user_data.provider_account_id,user_id=user.id)
   db.add(auth_account)
   await db.commit()
-  send_email.apply_async(args=[user_data.email,""],queue="simple_task_queue",priority=7)
   return user
   
   

@@ -13,7 +13,7 @@ from datetime import timedelta
 from app.core.config import settings
 from fastapi.security import OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
-from app.workers.celery_app import check_smtp_task,send_email
+from app.tasks.alerts import send_email, check_smtp_task
 import jwt
 
 router = APIRouter(prefix="/auth",tags=["auth"])
