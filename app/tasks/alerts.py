@@ -13,7 +13,7 @@ def check_smtp_task():
         return f"SMTP not reachable: {e}"
    
       
-@celery_app.task(bind=True,autoretry_for = (Exception,),retry_backoff=True,retry_backoff_max=600,max_retries=None)
+@celery_app.task(bind=True,autoretry_for = (Exception,),retry_backoff=True,retry_backoff_max=600,max_retries=None,queue="simple_task_queue")
 def send_email(self,email:str,name:str):
   async def send():
     message = MessageSchema(
