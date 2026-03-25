@@ -2,7 +2,7 @@ from sqlalchemy.orm import mapped_column, Mapped,relationship
 from sqlalchemy import String, ForeignKey, DateTime, func, Float, Text,Boolean,UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from pydantic import EmailStr
-from typing import Literal,List
+from typing import Literal,List,Optional
 from uuid import uuid4, UUID as UUID_TYPE
 from app.db.base import Base
 from datetime import datetime
@@ -44,6 +44,7 @@ class Asset(Base):
   symbol: Mapped[str] = mapped_column(String, index=True)
   name: Mapped[str] = mapped_column(String, index=True)
   coingecko_id: Mapped[str] = mapped_column(String, unique=True)
+  image: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
   created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
   
   price_snapshots: Mapped[List["PriceSnapshot"]] = relationship(
