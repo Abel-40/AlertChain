@@ -7,8 +7,9 @@ from redis import Redis
 celery_app = Celery(
                     broker=settings.REDIS_FOR_BROKER,
                     backend=settings.REDIS_FOR_BACKEND, 
+                    
                     )
-celery_app.autodiscover_tasks(["app.tasks"])
+celery_app.autodiscover_tasks(["app"])
 redis = Redis.from_url(settings.REDIS_FOR_CACHE, max_connections=10)
 
 import app.workers.beat
