@@ -1,7 +1,7 @@
 from pydantic import BaseModel,ConfigDict,Field, AliasChoices,field_validator
 from uuid import UUID
 from fastapi import HTTPException,status
-from typing import List,Annotated
+from typing import List,Annotated,Dict
 class AssetOut(BaseModel):
     coingecko_id: str = Field(validation_alias=AliasChoices('id', 'coingecko_id'))
     symbol: str
@@ -25,3 +25,10 @@ class AssetIds(BaseModel):
         if len(asset_ids) > 10:
             raise ValueError("You can select maximum 10 crypto!!!")
         return asset_ids  
+    
+    
+class Price(BaseModel):
+    usd:float
+
+class AssetWithPrice(BaseModel):
+    asset:Dict[str,Price]

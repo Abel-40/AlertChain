@@ -2,14 +2,15 @@ from fastapi import APIRouter,Request, Depends,status,HTTPException
 from app.api.dependencies import rate_limit,get_current_user
 from app.schemas.responses import APIResponse
 from app.utils.response import success_response
-from app.schemas.assets import AssetOut,AssetInDb,AssetIds
+from app.schemas.assets import AssetOut,AssetInDb,AssetIds,AssetWithPrice
+from app.models.model import User
 from typing import List,Annotated
 from pydantic import Field
 from sqlalchemy import select
 from app.models.model import Asset
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.db import get_db
-from app.tasks.fetch_crypto import fetch_popular_crypto
+from app.tasks.fetch_crypto import fetch_popular_crypto,get_assets_prices
 import orjson
 import httpx
 router = APIRouter(prefix="/assets",tags=["assets"])
@@ -87,7 +88,7 @@ async def search_crypto(crypto_name: str, request: Request):
         )
     
     
-@router.post("/add/assets/")
+@router.post("/add/")
 async def add_assets(asset_ids: AssetIds, db: AsyncSession = Depends(get_db)):
     if not asset_ids.ids:
         return {"message": "No IDs provided"}
@@ -142,3 +143,20 @@ async def add_assets(asset_ids: AssetIds, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during asset registration"
         )
+    
+@router.get("/price/",response_model=APIResponse[List[AssetWithPrice]])    
+async def get_asset_with_price(request:Request,current_user:User = Depends(get_current_user)):
+    cache_key = "asset:price:latest"
+    redis_client = request.app.state.redis
+    cached = await redis_client.get(cache_key)
+    if not cached:
+        return success_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="no data yet. please try again later.",
+            data=None
+        )
+    return success_response(
+        status_code=status.HTTP_200_OK,
+        message="assets price fetched successfully!!",
+        data=orjson.loads(cached)
+    )

@@ -9,5 +9,14 @@ celery_app.conf.beat_schedule = {
             "queue": "simple_task_queue",
             "priority": 9
         },
+    },
+    
+    "update_assets_price_every_1minutes":{
+        "task":"update_assets_price_pipeline",
+        "schedule":timedelta(minutes=1),
+        "options":{
+            "queue":"heavy_task_queue",
+            "priority":28
+        }
     }
 }
