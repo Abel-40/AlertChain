@@ -1,0 +1,60 @@
+from fastapi import APIRouter,Request, Depends,status,HTTPException
+from app.api.dependencies import rate_limit,get_current_user
+from app.schemas.responses import APIResponse
+from app.utils.response import success_response
+from app.schemas.alerts import CreateAlert
+from app.models.model import User
+from typing import List,Annotated
+from pydantic import Field
+from sqlalchemy import select,desc
+from app.models.model import Asset,AlertRule,PriceSnapshot
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.db import get_db
+from app.tasks.fetch_crypto import fetch_popular_crypto,get_assets_prices
+import orjson
+import httpx
+
+router = APIRouter(prefix="/alert",tags=["alerts"])
+
+
+@router.post("/create/")
+async def create_alert(alert_data:CreateAlert,db:AsyncSession = Depends(get_db),current_user:User = Depends(get_current_user)):
+  stmt = select(Asset).where(Asset.coingecko_id == alert_data.asset_coingecko_id)
+  result = await db.execute(stmt)
+  asset = result.scalar_one_or_none()
+
+  if not asset:
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="asset not found.")
+  if asset.current_price is None:
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Asset price not available yet"
+    )
+    
+  if alert_data.condition_type == "ABOVE":
+      if alert_data.target_price <= asset.current_price:
+          raise HTTPException(
+              status_code=status.HTTP_400_BAD_REQUEST,
+              detail="Target price must be greater than current price for ABOVE condition"
+          )
+
+  elif alert_data.condition_type == "BELOW":
+      if alert_data.target_price >= asset.current_price:
+          raise HTTPException(
+              status_code=status.HTTP_400_BAD_REQUEST,
+              detail="Target price must be less than current price for BELOW condition"
+          )
+
+  else:
+      raise HTTPException(
+          status_code=status.HTTP_400_BAD_REQUEST,
+          detail="Invalid condition type"
+      )
+     
+  alert = AlertRule(user_id=current_user.id,asset_id=asset.id,target_price=alert_data.target_price,condition_type=alert_data.condition_type)
+  
+  db.add(alert)
+  
+  await db.commit()
+  
+  return {"message":"alert created successfully!!"}

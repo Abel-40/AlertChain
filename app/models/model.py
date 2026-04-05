@@ -43,8 +43,9 @@ class Asset(Base):
   id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
   symbol: Mapped[str] = mapped_column(String, index=True)
   name: Mapped[str] = mapped_column(String, index=True)
-  coingecko_id: Mapped[str] = mapped_column(String, unique=True)
+  coingecko_id: Mapped[str] = mapped_column(String, unique=True, index=True)
   image: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+  current_price: Mapped[float] = mapped_column(Float, nullable=True)
   created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
   
   price_snapshots: Mapped[List["PriceSnapshot"]] = relationship(
@@ -59,6 +60,7 @@ class PriceSnapshot(Base):
   asset_id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), ForeignKey("assets.id",ondelete="CASCADE"))
   price_usd: Mapped[float] = mapped_column(Float)
   timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+  
   asset: Mapped["Asset"] = relationship("Asset", back_populates="price_snapshots")
 
 class AlertRule(Base):
@@ -68,14 +70,23 @@ class AlertRule(Base):
   asset_id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), ForeignKey("assets.id"))
   target_price: Mapped[float] = mapped_column(Float)
   condition_type: Mapped[Literal["ABOVE", "BELOW"]] = mapped_column(String)
-  is_active:Mapped[bool] = mapped_column(Boolean,index=True)
+  is_active:Mapped[bool] = mapped_column(Boolean,default=True,index=True)
+  last_triggered_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+  updated_at: Mapped[datetime] = mapped_column(
+      DateTime,
+      default=datetime.utcnow,
+      onupdate=datetime.utcnow
+  )
+  
   user:Mapped[User] = relationship('User',back_populates="alerts")
-  asset: Mapped["Asset"] = relationship("Asset")
-  updated_at:Mapped[datetime] = mapped_column(DateTime, onupdate=func.now())
+  asset: Mapped["Asset"] = relationship("Asset",lazy="selectin")
+  
   
   __table_args__ = (
     UniqueConstraint("user_id","asset_id","target_price","condition_type"),
   )
+  
+  
 class Notification(Base):
   __tablename__ = "notifications"
   id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -84,5 +95,6 @@ class Notification(Base):
   message: Mapped[str] = mapped_column(Text)
   status: Mapped[Literal["PENDING", "SENT", "FAILED"]] = mapped_column(String, default="PENDING")
   created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+  
   user: Mapped[User] = relationship("User", back_populates="notifications")
   alert_rule: Mapped["AlertRule"] = relationship("AlertRule")

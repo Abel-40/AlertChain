@@ -1,4 +1,3 @@
-from app.workers.celery_app import celery_app
 from app.workers.celery_app import celery_app, redis as redis_client
 from app.db.session import AsyncLocalSession
 from app.workers.celery_app import celery_app,redis as redis_client
@@ -86,8 +85,8 @@ def update_assets_price(price_data):
             for asset_id, value in price_data.items():
                 price = value.get("usd")
                 asset = assets_map.get(asset_id)
-                
                 if price is not None and asset:
+                    asset.current_price = price
                     db.add(PriceSnapshot(asset_id=asset.id, price_usd=price))
 
             await db.commit()

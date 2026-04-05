@@ -160,3 +160,5 @@ async def get_asset_with_price(request:Request,current_user:User = Depends(get_c
         message="assets price fetched successfully!!",
         data=orjson.loads(cached)
     )
+    
+    

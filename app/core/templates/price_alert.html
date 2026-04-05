@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Price Alert</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+
+  <div style="max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px;">
+    
+    <h2 style="color: #333;">🚨 Price Alert Triggered</h2>
+
+    <p>Hello {{ name }},</p>
+
+    <p>
+      Your alert for <strong>{{ asset }}</strong> has been triggered.
+    </p>
+
+    <p style="font-size: 18px;">
+      Current Price: <strong>${{ price }}</strong>
+    </p>
+
+    <p>
+      Condition: {{ condition }} ${{ target_price }}
+    </p>
+
+    <hr>
+
+    <p style="font-size: 12px; color: #888;">
+      You are receiving this because you set a price alert.
+    </p>
+
+  </div>
+
+</body>
+</html>

@@ -18,5 +18,14 @@ celery_app.conf.beat_schedule = {
             "queue":"heavy_task_queue",
             "priority":28
         }
+    },
+    
+    "check_alert_every_2minute":{
+        "task":"alert_checker",
+        "schedule":timedelta(minutes=2),
+        "options":{
+            "queue":"simple_task_queue",
+            "priority":28
+        }
     }
 }
