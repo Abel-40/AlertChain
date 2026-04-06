@@ -94,7 +94,8 @@ class Notification(Base):
   alert_rule_id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), ForeignKey("alert_rules.id"))
   message: Mapped[str] = mapped_column(Text)
   status: Mapped[Literal["PENDING", "SENT", "FAILED"]] = mapped_column(String, default="PENDING")
+  is_read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
   created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
   
   user: Mapped[User] = relationship("User", back_populates="notifications")
-  alert_rule: Mapped["AlertRule"] = relationship("AlertRule")
+  alert_rule: Mapped["AlertRule"] = relationship("AlertRule", lazy="selectin")

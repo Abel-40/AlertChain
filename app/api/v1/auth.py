@@ -1,21 +1,23 @@
 from fastapi import APIRouter,Depends, HTTPException, status,Request
 from fastapi.responses import JSONResponse
-from app.services.auth import create_user,authenticate_user,get_user_by_id,social_signup
-from app.schemas.users import UserOut,UserCreate,UserLogin,ThirdPartyLogin
+from app.services.auth import create_user,authenticate_user,get_user_by_id,social_signup, get_user_by_email, reset_password_service
+from app.schemas.users import UserOut,UserCreate,UserLogin,ThirdPartyLogin, ForgotPassword, ResetPassword
 from app.schemas.responses import APIResponse,TokenResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.db import get_db
+from app.models.model import User
 from app.utils.response import success_response
 from app.exceptions.users import UserAlreadyExistError, InvalidCredentialsError
-from app.api.dependencies import rate_limit
+from app.api.dependencies import rate_limit, auth_scheme
 from app.core.auth import token_generator
 from datetime import timedelta
 from app.core.config import settings
 from fastapi.security import OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
-from app.tasks.alerts import send_email, check_smtp_task
+from app.tasks.alerts import send_email, check_smtp_task,send_email_forget_password
+from app.api.dependencies import get_current_user
 import jwt
-
+import time
 router = APIRouter(prefix="/auth",tags=["auth"])
 @router.post("/register_user/",response_model=APIResponse[UserOut],dependencies=[Depends(rate_limit(limit=5,window=60))])
 async def register_user(user_data:UserCreate, db:AsyncSession = Depends(get_db)):
@@ -25,7 +27,7 @@ async def register_user(user_data:UserCreate, db:AsyncSession = Depends(get_db))
     return success_response(
       status_code=201,
       message="user successfully sign up!!",
-      data=UserOut.model_validate(user).model_dump(mode="json"),
+      data=UserOut.model_validate(user),
       )
   except UserAlreadyExistError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail="Email already exist!!!")
@@ -51,7 +53,7 @@ async def login_endpoint(user_data:OAuth2PasswordRequestForm = Depends(),db:Asyn
   except InvalidCredentialsError:
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Invalid Email or Password")
 
-@router.post("/refresh")
+@router.post("/refresh", dependencies=[Depends(rate_limit(limit=5, window=60))])
 async def refresh_login(request: Request, db: AsyncSession = Depends(get_db)):
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
@@ -59,6 +61,11 @@ async def refresh_login(request: Request, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="Refresh token missing"
         )
+    
+    redis = request.app.state.redis
+    is_blacklisted = await redis.get(f"blacklist:{refresh_token}")
+    if is_blacklisted:
+        raise HTTPException(status_code=401, detail="Refresh token revoked")
 
     try:
         payload = jwt.decode(
@@ -90,7 +97,7 @@ async def refresh_login(request: Request, db: AsyncSession = Depends(get_db)):
         response = success_response(
             status_code=200,
             message="Token refreshed",
-            data=TokenResponse(access_token=new_access, token_type="Bearer").model_dump()
+            data=TokenResponse(access_token=new_access, token_type="Bearer")
         )
 
         response.set_cookie(
@@ -107,7 +114,7 @@ async def refresh_login(request: Request, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
     
     
-@router.post("/social/signup")
+@router.post("/social/signup", dependencies=[Depends(rate_limit(limit=5, window=60))])
 async def third_party_signup(user_data:ThirdPartyLogin, db:AsyncSession = Depends(get_db)):
     user = await social_signup(user_data=user_data,db=db)
     access_token = token_generator(data={"sub":str(user.id),"type":"access"},expire=timedelta(minutes=30),key=settings.ACCESS_TOKEN_KEY)
@@ -128,4 +135,72 @@ async def third_party_signup(user_data:ThirdPartyLogin, db:AsyncSession = Depend
 @router.get("/check_email/") 
 async def check_smtp():
     print(check_smtp_task.run())
+
+@router.get("/me/", response_model=APIResponse[UserOut])
+async def get_me(current_user: User = Depends(get_current_user)):
+    return success_response(
+        status_code=200,
+        message="Current user fetched successfully",
+        data=UserOut.model_validate(current_user)
+    )
+
+@router.post("/logout/", dependencies=[Depends(rate_limit(limit=10, window=60))])
+async def logout(request: Request, token: str = Depends(auth_scheme)):
+    response = success_response(
+        status_code=200,
+        message="Logged out successfully",
+        data=None
+    )
+    redis = request.app.state.redis
+    refresh_token = request.cookies.get("refresh_token")
     
+    try:
+        payload = jwt.decode(token, settings.ACCESS_TOKEN_KEY, algorithms=[settings.ALGO], options={"verify_exp": False})
+        exp = payload.get("exp", 0)
+        now = time.time()
+        ttl = max(0, int(exp - now))
+        if ttl > 0:
+            await redis.set(f"blacklist:{token}", "1", ex=ttl)
+    except Exception:
+        pass
+        
+    if refresh_token:
+        try:
+            payload = jwt.decode(refresh_token, settings.REFRESH_TOKEN_KEY, algorithms=[settings.ALGO], options={"verify_exp": False})
+            exp = payload.get("exp", 0)
+            now = time.time()
+            ttl = max(0, int(exp - now))
+            if ttl > 0:
+                await redis.set(f"blacklist:{refresh_token}", "1", ex=ttl)
+        except Exception:
+            pass
+
+    response.delete_cookie(key="refresh_token")
+    return response
+
+@router.post("/forgot-password", dependencies=[Depends(rate_limit(limit=5, window=60))])
+async def forgot_password(payload: ForgotPassword, db: AsyncSession = Depends(get_db)):
+    user = await get_user_by_email(email=payload.email, db=db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="User not found")
+    reset_token = token_generator(data={"sub": str(user.id), "type": "reset"}, expire=timedelta(minutes=15), key=settings.ACCESS_TOKEN_KEY)
+    reset_link = f"https://localhost:3000/reset-password?token={reset_token}"
+    send_email_forget_password.apply_async  (args=[reset_link,payload.email],queue="simple_task_queue",priority=7)
+    
+    return success_response(
+        status_code=200,
+        message="A password reset link has been sent to your email.",
+        data=None
+    )
+
+@router.post("/reset-password", dependencies=[Depends(rate_limit(limit=5, window=60))])
+async def reset_password(payload: ResetPassword, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    try:
+        await reset_password_service(user_id=current_user.id, new_password=payload.new_password, db=db)
+        return success_response(
+            status_code=200,
+            message="Password reset successfully.",
+            data=None
+        )
+    except InvalidCredentialsError :
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="user not found")    

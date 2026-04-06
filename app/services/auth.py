@@ -65,4 +65,10 @@ async def social_signup(user_data: ThirdPartyLogin, db: AsyncSession):
   return user
   
   
-    
+async def reset_password_service(user_id: UUID, new_password: str, db: AsyncSession):
+    user = await get_user_by_id(db=db, id=user_id)
+    if not user:
+        raise InvalidCredentialsError
+    user.hashed_password = hash_password(password=new_password)
+    await db.commit()
+    return user

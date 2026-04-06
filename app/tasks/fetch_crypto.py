@@ -1,6 +1,5 @@
 from app.workers.celery_app import celery_app, redis as redis_client
 from app.db.session import AsyncLocalSession
-from app.workers.celery_app import celery_app,redis as redis_client
 from app.models.model import Asset,PriceSnapshot
 from sqlalchemy import select
 from celery import chain
@@ -100,7 +99,7 @@ def update_assets_price(price_data):
 
     return asyncio.run(run())
 
-@celery_app.task(name="update_assets_price_pipeline", ignore_result=True)
+@celery_app.task(name="update_assets_price_pipeline", queue="heavy_task_queue", ignore_result=True)
 def update_assets_price_pipeline():
     chain_execution = (get_assets_prices.s() | update_assets_price.s())
     return chain_execution.apply_async()

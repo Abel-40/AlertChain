@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
 from typing import TypeVar,Generic,Any,Dict,List,Optional
 
 T = TypeVar("T")
@@ -23,3 +23,8 @@ class PaginatedResponse(BaseModel, Generic[I]):
 class TokenResponse(BaseModel):
   access_token:str
   token_type:str
+
+class QueryParams(BaseModel):
+  page:int = Field(default=1,ge=1)
+  page_size:int = Field(default=10,le=100)
+  tags:Optional[List[str]] = None

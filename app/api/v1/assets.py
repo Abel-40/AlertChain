@@ -1,21 +1,24 @@
-from fastapi import APIRouter,Request, Depends,status,HTTPException
+from fastapi import APIRouter,Request, Depends,status,HTTPException,Query
 from app.api.dependencies import rate_limit,get_current_user
-from app.schemas.responses import APIResponse
-from app.utils.response import success_response
-from app.schemas.assets import AssetOut,AssetInDb,AssetIds,AssetWithPrice
-from app.models.model import User
+from app.schemas.responses import APIResponse,PaginatedResponse,QueryParams
+from app.utils.response import success_response,paginated_query
+from app.schemas.assets import AssetOut,AssetOutFromSearch,AssetInDb,AssetIds,AssetWithPrice,PriceSnapshotOut, AssetOutFromDb
+from app.models.model import User,PriceSnapshot
+from uuid import UUID
 from typing import List,Annotated
 from pydantic import Field
 from sqlalchemy import select
 from app.models.model import Asset
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.db import get_db
-from app.tasks.fetch_crypto import fetch_popular_crypto,get_assets_prices
+from app.tasks.fetch_crypto import fetch_popular_crypto,get_assets_prices   
 import orjson
 import httpx
+from app.services.assets import add_assets_service, get_user_tracked_assets
+
 router = APIRouter(prefix="/assets",tags=["assets"])
   
-@router.get("/popular", response_model=APIResponse[List[AssetOut]])
+@router.get("/popular", response_model=APIResponse[List[AssetOutFromSearch]], dependencies=[Depends(rate_limit(limit=30, window=60))])
 async def get_popular_assets(request: Request):
     redis = request.app.state.redis
 
@@ -46,7 +49,7 @@ async def get_popular_assets(request: Request):
     )
     
     
-@router.get("/search", response_model=APIResponse[List[AssetOut]])
+@router.get("/search", response_model=APIResponse[List[AssetOutFromSearch]], dependencies=[Depends(rate_limit(limit=20, window=60))])
 async def search_crypto(crypto_name: str, request: Request):
     cache_key = f"search:{crypto_name.lower()}"
     redis_client = request.app.state.redis
@@ -61,12 +64,12 @@ async def search_crypto(crypto_name: str, request: Request):
     try:
         url = "https://api.coingecko.com/api/v3/search"
         async with httpx.AsyncClient() as client:
-            response = await client.get(url, params={"query": crypto_name}, timeout=10.0)
+            response = await client.get(url, params={"query": crypto_name}, timeout=15.0)
             response.raise_for_status()
             
             raw_data = response.json()
   
-            coins = [AssetOut(**coin).model_dump() for coin in raw_data.get("coins", [])]
+            coins = [AssetOutFromSearch.from_search_result(coin).model_dump() for coin in raw_data.get("coins", [])]
             
             await redis_client.set(cache_key, orjson.dumps(coins), ex=600)
             
@@ -88,63 +91,20 @@ async def search_crypto(crypto_name: str, request: Request):
         )
     
     
-@router.post("/add/")
+@router.post("/add/", dependencies=[Depends(rate_limit(limit=10, window=60))])
 async def add_assets(asset_ids: AssetIds, db: AsyncSession = Depends(get_db)):
-    if not asset_ids.ids:
-        return {"message": "No IDs provided"}
+    return await add_assets_service(asset_ids=asset_ids, db=db)
 
-    stmt = select(Asset.coingecko_id).where(Asset.coingecko_id.in_(asset_ids.ids))
-    result = await db.execute(stmt)
-    existing_assets = result.scalars().all()
-    assets_set = set(existing_assets)
-    to_fetch = [id for id in asset_ids.ids if id not in assets_set]
+@router.get("/tracked", response_model=APIResponse[List[AssetOutFromDb]], dependencies=[Depends(rate_limit(limit=30, window=60))])
+async def get_tracked_assets_endpoint(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    assets = await get_user_tracked_assets(user_id=current_user.id, db=db)
+    return success_response(
+        status_code=status.HTTP_200_OK,
+        message="Tracked assets retrieved successfully",
+        data=[AssetOutFromDb.model_validate(asset) for asset in assets]
+    )
     
-    if not to_fetch:
-        return {"message": "All assets are already registered!"}
-
-    try:
-        url = "https://api.coingecko.com/api/v3/coins/markets"
-        params = {
-            "vs_currency": "usd",
-            "ids": ",".join(to_fetch) 
-        }
-        
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url=url, params=params)
-            response.raise_for_status()
-            data = response.json()
-            if not data:
-                return {"message": "No matching assets found on CoinGecko"}
-
-            new_assets = []
-            for c in data:
-                asset_data = {
-                    "coingecko_id": c["id"], 
-                    "symbol": c["symbol"], 
-                    "name": c["name"],
-                    "image": c["image"]
-                }
-                
-                validated_data = AssetInDb(**asset_data).model_dump()
-                new_assets.append(Asset(**validated_data))
-            
-            db.add_all(new_assets)
-            await db.commit()
-            
-            return {"message": f"{len(new_assets)} assets registered successfully!!"}
-        
-    except httpx.HTTPStatusError as exc:
-        raise HTTPException(
-            status_code=exc.response.status_code,
-            detail=f"External API error: {exc.response.text}"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred during asset registration"
-        )
-    
-@router.get("/price/",response_model=APIResponse[List[AssetWithPrice]])    
+@router.get("/price/",response_model=APIResponse[List[AssetWithPrice]], dependencies=[Depends(rate_limit(limit=60, window=60))])    
 async def get_asset_with_price(request:Request,current_user:User = Depends(get_current_user)):
     cache_key = "asset:price:latest"
     redis_client = request.app.state.redis
@@ -161,4 +121,14 @@ async def get_asset_with_price(request:Request,current_user:User = Depends(get_c
         data=orjson.loads(cached)
     )
     
-    
+@router.get("/price/snapshot/{asset_id}",response_model=PaginatedResponse[APIResponse[List[PriceSnapshotOut]]], dependencies=[Depends(rate_limit(limit=30, window=60))])    
+async def get_asset_price_snapshot(q: Annotated[QueryParams, Query()],asset_id:UUID,db:AsyncSession = Depends(get_db),current_user:User = Depends(get_current_user)):
+    price_snapshots = await paginated_query(db,select(PriceSnapshot).where(PriceSnapshot.asset_id == asset_id).order_by(PriceSnapshot.timestamp.desc()),q.page,q.page_size)
+    return success_response(
+        message="price snapshot fetched successfully",
+        data={
+            "items": [PriceSnapshotOut.model_validate(i) for i in price_snapshots["items"]],
+            "pagination": price_snapshots["meta"]
+        },
+        status_code=status.HTTP_200_OK
+    )

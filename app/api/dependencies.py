@@ -35,8 +35,14 @@ def rate_limit(limit: int, window: int):
   return actual_dependency
   
   
-async def get_current_user(token:str = Depends(auth_scheme),db:AsyncSession= Depends(get_db)):
+async def get_current_user(request: Request, token:str = Depends(auth_scheme),db:AsyncSession= Depends(get_db)):
     credentials_exception = HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Invalid credentials")
+    
+    redis = request.app.state.redis
+    is_blacklisted = await redis.get(f"blacklist:{token}")
+    if is_blacklisted:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has been revoked.")
+
     try:
         payload = jwt.decode(token, settings.ACCESS_TOKEN_KEY, algorithms=[settings.ALGO])
         user_id = payload.get("sub")

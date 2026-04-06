@@ -3,7 +3,7 @@ from redis.asyncio import Redis
 from contextlib import asynccontextmanager
 from redis.exceptions import ConnectionError
 from app.core.config import settings
-from app.api.v1 import auth,assets,alerts
+from app.api.v1 import auth,assets,alerts,notifications
 from app.utils.response import error_response
 from fastapi.exceptions import RequestValidationError
 Rate_Limit_Script = """
@@ -49,6 +49,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(router=auth.router, prefix="/alertchain")
 app.include_router(router=assets.router,prefix="/alertchain")
 app.include_router(router=alerts.router,prefix="/alertchain")
+app.include_router(router=notifications.router,prefix="/alertchain")
 
 @app.exception_handler(HTTPException)
 def http_exception_handler(request:Request,exc:HTTPException):

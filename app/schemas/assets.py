@@ -1,14 +1,45 @@
-from pydantic import BaseModel,ConfigDict,Field, AliasChoices,field_validator
+from pydantic import BaseModel,ConfigDict,Field, field_validator,AliasChoices
 from uuid import UUID
-from fastapi import HTTPException,status
-from typing import List,Annotated,Dict
+from typing import List,Optional, Dict, Any
+from datetime import datetime
+
+
+from uuid import UUID
+from typing import Optional, Dict, Any
+from pydantic import BaseModel, Field, ConfigDict
+
 class AssetOut(BaseModel):
-    coingecko_id: str = Field(validation_alias=AliasChoices('id', 'coingecko_id'))
+    coingecko_id: Optional[str] = Field(default=None, validation_alias=AliasChoices('id', 'coingecko_id'))
+    symbol: Optional[str] = None
+    name: Optional[str] = None
+    image: Optional[str] = Field(default=None, validation_alias=AliasChoices('image', 'thumb'))
+    current_price: Optional[float] = None
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    
+
+class AssetOutFromDb(BaseModel):
+    id:UUID
+    coingecko_id: str
     symbol: str
     name: str
-    image: str = Field(validation_alias=AliasChoices('image', 'thumb'))
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    image: str
+    current_price: float
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)   
 
+class AssetOutFromSearch(BaseModel):
+    coingecko_id: Optional[str] = Field(default=None, validation_alias=AliasChoices('id', 'coingecko_id'))
+    symbol: Optional[str] = None
+    name: Optional[str] = None
+    image: Optional[str] = Field(default=None, validation_alias=AliasChoices('image', 'thumb'))
+    
+    @classmethod
+    def from_search_result(cls,coin_data:Dict[str,Any]) -> 'AssetOutFromSearch':
+        return cls(
+            coingecko_id=coin_data.get('id'),
+            symbol=coin_data.get('symbol', '').upper(),
+            name=coin_data.get('name', 'Unknown'),
+            image=coin_data.get('thumb') or coin_data.get('image') or "https://via.placeholder.com/50"
+        )
 
 class AssetInDb(BaseModel):
   symbol:str
@@ -32,3 +63,8 @@ class Price(BaseModel):
 
 class AssetWithPrice(BaseModel):
     asset:Dict[str,Price]
+
+class PriceSnapshotOut(BaseModel):
+    price_usd:float
+    timestamp:datetime
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

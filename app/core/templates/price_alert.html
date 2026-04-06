@@ -1,36 +1,129 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta charset="UTF-8">
-  <title>Price Alert</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes"/>
+    <title>Alert Triggered | AlertChain</title>
+    <style type="text/css">
+        /* Client-specific Styles & Reset */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        
+        body { 
+            height: 100% !important; 
+            margin: 0 !important; 
+            padding: 20px 0 !important; 
+            width: 100% !important; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f4f6f8;
+            text-align: center;
+        }
+        
+        .ExternalClass, .ReadMsgBody { width: 100%; background-color: #f4f6f8; }
+        
+        .feature-card {
+            background: #111827;
+            border-radius: 6px;
+            padding: 24px;
+            border-left: 3px solid #ef4444;
+        }
+
+        .highlight-text {
+            color: #ffffff;
+            font-weight: 500;
+            font-size: 28px;
+        }
+        
+        /* Responsive Styles */
+        @media screen and (max-width: 600px) {
+            .feature-card { padding: 16px !important; }
+            h1 { font-size: 22px !important; line-height: 1.3 !important; }
+            .hero-title { font-size: 22px !important; }
+            .inner-padding { padding-left: 20px !important; padding-right: 20px !important; }
+            .content-table { width: 100% !important; border-radius: 0 !important; }
+            .highlight-text { font-size: 24px !important; }
+        }
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
-
-  <div style="max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px;">
-    
-    <h2 style="color: #333;">🚨 Price Alert Triggered</h2>
-
-    <p>Hello {{ name }},</p>
-
-    <p>
-      Your alert for <strong>{{ asset }}</strong> has been triggered.
-    </p>
-
-    <p style="font-size: 18px;">
-      Current Price: <strong>${{ price }}</strong>
-    </p>
-
-    <p>
-      Condition: {{ condition }} ${{ target_price }}
-    </p>
-
-    <hr>
-
-    <p style="font-size: 12px; color: #888;">
-      You are receiving this because you set a price alert.
-    </p>
-
-  </div>
-
+<body>
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f6f8; text-align: center;">
+        <tr>
+            <td align="center" style="padding: 30px 0;">
+                <table align="center" border="0" cellpadding="0" cellspacing="0" width="560" class="content-table" style="width: 560px; max-width: 100%; background-color: #090e17; border-radius: 8px; overflow: hidden; margin: 0 auto;">
+                    
+                    <tr>
+                        <td style="padding: 30px 40px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); background-color: #090e17;" class="inner-padding">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="left" style="vertical-align: middle;">
+                                        <span style="color: #ffffff; font-size: 16px; font-weight: 600; letter-spacing: 2px;">
+                                            ALERTCHAIN
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td style="padding: 40px 40px 20px 40px; background-color: #090e17;" class="inner-padding">
+                            <p style="text-transform: uppercase; letter-spacing: 1.5px; color: #ef4444; font-size: 11px; font-weight: 600; margin: 0 0 12px 0;">
+                                Action Required
+                            </p>
+                            <h1 style="font-size: 26px; margin: 0 0 16px 0; color: #ffffff; font-weight: 400;" class="hero-title">
+                                System Alert Triggered
+                            </h1>
+                            <p style="font-size: 15px; line-height: 1.6; color: #9ca3af; margin: 0 0 12px 0;" class="greeting-text">
+                                Hello <span style="color: #ffffff;">{{ name }}</span>, your custom threshold condition for <strong style="color: #ffffff;">{{ asset }}</strong> has been met.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td style="padding: 10px 40px 40px 40px;" class="inner-padding">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td width="100%" valign="top">
+                                        <div class="feature-card" style="text-align: left;">
+                                            <p style="color: #6b7280; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin: 0 0 8px 0;">Market Execution Price</p>
+                                            <p class="highlight-text" style="margin: 0 0 16px 0;">${{ price }}</p>
+                                            
+                                            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background: rgba(255, 255, 255, 0.03); border-radius: 4px;">
+                                                <tr>
+                                                    <td style="padding: 12px;">
+                                                        <p style="font-size: 13px; color: #9ca3af; margin: 0;">
+                                                            Rule Condition: <strong style="color: #ffffff;">{{ condition }} ${{ target_price }}</strong>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #05080d; border-top: 1px solid rgba(255, 255, 255, 0.03);" class="inner-padding">
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="left">
+                                        <p style="font-size: 11px; color: #6b7280; line-height: 1.6; margin: 0;">
+                                            AlertChain Inc.<br/>
+                                            This is an automated dispatch from your configured alert rules.<br/>
+                                            &copy; 2026 AlertChain. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

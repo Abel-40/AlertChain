@@ -7,7 +7,7 @@ celery_app.conf.beat_schedule = {
         "schedule": timedelta(minutes=9),
         "options": {
             "queue": "simple_task_queue",
-            "priority": 9
+            "priority": 5
         },
     },
     
@@ -16,7 +16,7 @@ celery_app.conf.beat_schedule = {
         "schedule":timedelta(minutes=1),
         "options":{
             "queue":"heavy_task_queue",
-            "priority":28
+            "priority":25
         }
     },
     
@@ -24,8 +24,8 @@ celery_app.conf.beat_schedule = {
         "task":"alert_checker",
         "schedule":timedelta(minutes=2),
         "options":{
-            "queue":"simple_task_queue",
-            "priority":28
+            "queue":"heavy_task_queue",
+            "priority":30
         }
     }
 }
