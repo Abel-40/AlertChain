@@ -39,7 +39,8 @@ async def add_assets_service(asset_ids: AssetIds, db: AsyncSession):
                     "coingecko_id": c["id"], 
                     "symbol": c["symbol"], 
                     "name": c["name"],
-                    "image": c["image"]
+                    "image": c["image"],
+                    "current_price": c.get("current_price", 0.0)
                 }
                 
                 validated_data = AssetInDb(**asset_data).model_dump()

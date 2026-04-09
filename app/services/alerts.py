@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 from uuid import UUID
 
 async def create_alert_service(alert_data: CreateAlert, current_user: User, db: AsyncSession):
-    stmt = select(Asset).where(Asset.coingecko_id == alert_data.asset_coingecko_id)
+    stmt = select(Asset).where(Asset.coingecko_id == alert_data.asset_id)
     result = await db.execute(stmt)
     asset = result.scalar_one_or_none()
 

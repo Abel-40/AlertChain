@@ -30,7 +30,13 @@ def fetch_popular_crypto(self):
     
     data = response.json()
     coins = [
-        {"coingecko_id": c["id"], "symbol": c["symbol"], "name": c["name"],"image":c["image"]}
+        {
+            "coingecko_id": c["id"], 
+            "symbol": c["symbol"], 
+            "name": c["name"],
+            "image": c["image"],
+            "current_price": c.get("current_price", 0.0)
+        }
         for c in data
     ]
     print("check check check check check")

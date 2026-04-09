@@ -1,4 +1,5 @@
 from fastapi import FastAPI,Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio import Redis
 from contextlib import asynccontextmanager
 from redis.exceptions import ConnectionError
@@ -6,6 +7,7 @@ from app.core.config import settings
 from app.api.v1 import auth,assets,alerts,notifications
 from app.utils.response import error_response
 from fastapi.exceptions import RequestValidationError
+
 Rate_Limit_Script = """
 local key = KEYS[1]
 local window_start = tonumber(ARGV[1])
@@ -46,6 +48,15 @@ async def lifespan(app:FastAPI):
       print("Redis connection closed")
     
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(router=auth.router, prefix="/alertchain")
 app.include_router(router=assets.router,prefix="/alertchain")
 app.include_router(router=alerts.router,prefix="/alertchain")

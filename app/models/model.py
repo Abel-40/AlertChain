@@ -72,6 +72,7 @@ class AlertRule(Base):
   condition_type: Mapped[Literal["ABOVE", "BELOW"]] = mapped_column(String)
   is_active:Mapped[bool] = mapped_column(Boolean,default=True,index=True)
   last_triggered_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+  created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
       DateTime,
       default=datetime.utcnow,
@@ -85,6 +86,7 @@ class AlertRule(Base):
   __table_args__ = (
     UniqueConstraint("user_id","asset_id","target_price","condition_type"),
   )
+
   
   
 class Notification(Base):

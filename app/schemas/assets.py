@@ -31,6 +31,7 @@ class AssetOutFromSearch(BaseModel):
     symbol: Optional[str] = None
     name: Optional[str] = None
     image: Optional[str] = Field(default=None, validation_alias=AliasChoices('image', 'thumb'))
+    current_price: Optional[float] = None
     
     @classmethod
     def from_search_result(cls,coin_data:Dict[str,Any]) -> 'AssetOutFromSearch':
@@ -46,6 +47,7 @@ class AssetInDb(BaseModel):
   name:str
   coingecko_id:str
   image:str
+  current_price: Optional[float] = 0.0
 
 class AssetIds(BaseModel):
     ids: List[str]
