@@ -125,20 +125,23 @@ async def get_asset_with_price(request: Request, current_user: User = Depends(ge
     )
 
 
-@router.get("/{coingecko_id}", response_model=APIResponse[AssetOutFromDb], dependencies=[Depends(rate_limit(limit=60, window=60))])
+@router.get("/detail/{coingecko_id}", response_model=APIResponse[AssetOutFromDb], dependencies=[Depends(rate_limit(limit=60, window=60))])
 async def get_asset_by_id(
     coingecko_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get a single asset by its coingecko_id"""
+    print(f"🔍 Fetching asset detail for: {coingecko_id}")
     stmt = select(Asset).where(Asset.coingecko_id == coingecko_id)
     result = await db.execute(stmt)
     asset = result.scalar_one_or_none()
     
     if not asset:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+        print(f"❌ Asset not found: {coingecko_id}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Asset '{coingecko_id}' not found in database. Please add it first.")
     
+    print(f"✅ Asset found: {asset.name}")
     return success_response(
         status_code=status.HTTP_200_OK,
         message="Asset fetched successfully",
