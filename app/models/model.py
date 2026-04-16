@@ -37,6 +37,7 @@ class User(Base):
       back_populates="user",
       passive_deletes=True
   )
+  user_assets:Mapped[List["UserAsset"]] = relationship("UserAsset",back_populates="user",cascade="all, delete-orphan",passive_deletes=True)
   
 class Asset(Base):
   __tablename__ = "assets"
@@ -53,6 +54,7 @@ class Asset(Base):
     back_populates="asset",
     passive_deletes=True
     )
+  user_assets:Mapped[List["UserAsset"]] = relationship("UserAsset",back_populates="asset")
   
 class PriceSnapshot(Base): 
   __tablename__ = "price_snapshots"
@@ -62,6 +64,23 @@ class PriceSnapshot(Base):
   timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
   
   asset: Mapped["Asset"] = relationship("Asset", back_populates="price_snapshots")
+
+
+class UserAsset(Base):
+  """Junction table for many-to-many relationship between User and Asset"""
+  __tablename__ = "user_assets"
+  __table_args__ = (
+    UniqueConstraint("user_id", "asset_id", name="uq_user_asset"),
+  )
+  
+  id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+  user_id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+  asset_id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True)
+  added_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+  
+  # Relationships
+  user: Mapped["User"] = relationship("User", back_populates="user_assets")
+  asset: Mapped["Asset"] = relationship("Asset", back_populates="user_assets")
 
 class AlertRule(Base):
   __tablename__ = "alert_rules"

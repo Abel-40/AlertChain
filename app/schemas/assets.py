@@ -70,3 +70,12 @@ class PriceSnapshotOut(BaseModel):
     price_usd:float
     timestamp:datetime
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class UserAssetOut(BaseModel):
+    """User-Asset relationship with metadata"""
+    id: UUID
+    user_id: UUID
+    asset_id: UUID
+    added_at: datetime
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

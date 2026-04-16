@@ -12,7 +12,7 @@ from app.db.db import get_db
 from app.tasks.fetch_crypto import fetch_popular_crypto
 import orjson
 import httpx
-from app.services.assets import add_assets_service, get_user_tracked_assets
+from app.services.assets import add_assets_service, get_user_tracked_assets, remove_asset_from_user
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -67,8 +67,13 @@ async def search_crypto(crypto_name: str, request: Request):
 
 
 @router.post("/add/", dependencies=[Depends(rate_limit(limit=10, window=60))])
-async def add_assets(asset_ids: AssetIds, db: AsyncSession = Depends(get_db)):
-    return await add_assets_service(asset_ids=asset_ids, db=db)
+async def add_assets(
+    asset_ids: AssetIds, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Add assets to current user's watchlist"""
+    return await add_assets_service(asset_ids=asset_ids, db=db, user_id=current_user.id)
 
 
 @router.get("/tracked", response_model=APIResponse[List[AssetOutFromDb]], dependencies=[Depends(rate_limit(limit=30, window=60))])
@@ -87,23 +92,23 @@ async def remove_tracked_asset(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Remove an asset from the user's tracked list by deleting their alerts for it."""
-    asset_stmt = select(Asset).where(Asset.coingecko_id == coingecko_id)
-    asset_result = await db.execute(asset_stmt)
-    asset = asset_result.scalar_one_or_none()
-    if not asset:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
-
-    stmt = delete(AlertRule).where(
-        AlertRule.user_id == current_user.id,
-        AlertRule.asset_id == asset.id
+    """Remove an asset from the user's watchlist by deleting junction table entry."""
+    success = await remove_asset_from_user(
+        user_id=current_user.id,
+        coingecko_id=coingecko_id,
+        db=db
     )
-    result = await db.execute(stmt)
-    await db.commit()
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Asset not found in your watchlist"
+        )
+    
     return success_response(
         status_code=status.HTTP_200_OK,
-        message=f"Removed asset {coingecko_id} from tracked list",
-        data=None
+        message=f"Removed asset {coingecko_id} from your watchlist",
+        data={"removed": True}
     )
 
 
