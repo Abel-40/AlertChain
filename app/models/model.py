@@ -38,6 +38,7 @@ class User(Base):
       passive_deletes=True
   )
   user_assets:Mapped[List["UserAsset"]] = relationship("UserAsset",back_populates="user",cascade="all, delete-orphan",passive_deletes=True)
+  profile: Mapped[Optional["UserProfile"]] = relationship("UserProfile", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
   
 class Asset(Base):
   __tablename__ = "assets"
@@ -120,3 +121,49 @@ class Notification(Base):
   
   user: Mapped[User] = relationship("User", back_populates="notifications")
   alert_rule: Mapped["AlertRule"] = relationship("AlertRule", lazy="selectin")
+
+
+class UserProfile(Base):
+  """User profile settings and preferences"""
+  __tablename__ = "user_profiles"
+  
+  id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+  user_id: Mapped[UUID_TYPE] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+  
+  # Profile Information
+  bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+  avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+  location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+  website: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+  
+  # Trading Preferences
+  preferred_currency: Mapped[str] = mapped_column(String(10), default="USD")
+  risk_tolerance: Mapped[Literal["LOW", "MEDIUM", "HIGH", "VERY_HIGH"]] = mapped_column(String, default="MEDIUM")
+  trading_experience: Mapped[Literal["BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"]] = mapped_column(String, default="BEGINNER")
+  
+  # Notification Settings
+  email_notifications: Mapped[bool] = mapped_column(Boolean, default=True)
+  price_alert_notifications: Mapped[bool] = mapped_column(Boolean, default=True)
+  market_update_notifications: Mapped[bool] = mapped_column(Boolean, default=False)
+  newsletter_subscription: Mapped[bool] = mapped_column(Boolean, default=False)
+  
+  # Display Settings
+  theme: Mapped[Literal["LIGHT", "DARK", "SYSTEM"]] = mapped_column(String, default="DARK")
+  default_chart_timeframe: Mapped[str] = mapped_column(String(20), default="1D")
+  show_portfolio_on_dashboard: Mapped[bool] = mapped_column(Boolean, default=True)
+  
+  # Alert Defaults
+  default_alert_condition: Mapped[Literal["ABOVE", "BELOW"]] = mapped_column(String, default="ABOVE")
+  alert_cooldown_minutes: Mapped[int] = mapped_column(default=60)
+  max_active_alerts: Mapped[int] = mapped_column(default=50)
+  
+  # Metadata
+  created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+  updated_at: Mapped[datetime] = mapped_column(
+      DateTime,
+      default=datetime.utcnow,
+      onupdate=datetime.utcnow
+  )
+  
+  # Relationships
+  user: Mapped["User"] = relationship("User", back_populates="profile", lazy="selectin")

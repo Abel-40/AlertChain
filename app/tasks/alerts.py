@@ -159,18 +159,26 @@ def notification_sender(self, alert_data):
 
             except Exception as e:
                 await db.rollback()
-
+                
+                # Log the full error for debugging
+                print(f"|------ ALERT FOR {alert_data['asset_id']} FAILED!!! -------|")
+                print(f"Full error: {str(e)}")
+                
+                # Create user-friendly error message (don't expose technical details)
+                error_message = f"Failed to send email notification for {alert_data['asset_id']} price alert. Please contact support if this issue persists."
+                
                 notification = Notification(
                     user_id=alert_data["user_id"],
                     alert_rule_id=alert_data["alert_rule_id"],
-                    message=str(e),
+                    message=error_message,
                     status="FAILED"
                 )
                 db.add(notification)
-                print(f"|------ ALERT FOR {alert_data['asset_id']} FAILED!!! -------|")
                 await db.commit()
-
-                raise e
+                
+                # Don't raise the error to prevent retry storms for email issues
+                # Just log it and mark as failed
+                return False
 
     asyncio.run(run())
 
