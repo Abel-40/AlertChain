@@ -11,6 +11,7 @@ from uuid import UUID
 from app.services.notifications import (
     get_user_notifications,
     get_unread_count,
+    get_notification_by_id,
     mark_as_read,
     mark_all_as_read,
     bulk_mark_as_read,
@@ -28,6 +29,16 @@ async def list_notifications(db: AsyncSession = Depends(get_db), current_user: U
         status_code=200,
         message="Notifications retrieved successfully",
         data=[NotificationOut.model_validate(n) for n in notifications]
+    )
+
+
+@router.get("/{notification_id}", response_model=APIResponse[NotificationOut], dependencies=[Depends(rate_limit(limit=30, window=60))])
+async def get_notification(notification_id: UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    notification = await get_notification_by_id(notification_id=notification_id, user_id=current_user.id, db=db)
+    return success_response(
+        status_code=200,
+        message="Notification retrieved successfully",
+        data=NotificationOut.model_validate(notification)
     )
 
 

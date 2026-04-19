@@ -5,6 +5,23 @@ from fastapi import HTTPException, status
 from uuid import UUID
 
 
+async def get_notification_by_id(notification_id: UUID, user_id: UUID, db: AsyncSession):
+    stmt = select(Notification).where(
+        Notification.id == notification_id,
+        Notification.user_id == user_id
+    )
+    result = await db.scalars(stmt)
+    notification = result.first()
+
+    if not notification:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Notification not found"
+        )
+
+    return notification
+
+
 async def get_user_notifications(user_id: UUID, db: AsyncSession):
     stmt = (
         select(Notification)

@@ -14,6 +14,50 @@ import orjson
 import asyncio
 import socket
 
+def _get_user_friendly_email_error(error_str: str, asset_id: str) -> str:
+    """
+    Convert technical email errors into user-friendly messages.
+    Maps specific error types to helpful, non-technical messages.
+    Priority: Connection errors > Timeout > Auth > SMTP > Rate limit > Recipient > SSL > Generic
+    """
+    error_lower = error_str.lower()
+    
+    # Connection/Network errors (HIGHEST PRIORITY - check first)
+    # These errors happen before authentication, so they take precedence
+    if any(keyword in error_lower for keyword in ['errno 111', 'connection refused', 'connect call failed']):
+        return f"Email service temporarily unavailable. Your {asset_id} alert was triggered but notification email could not be sent. Our team has been notified."
+    
+    # Timeout errors
+    if any(keyword in error_lower for keyword in ['timeout', 'timed out', 'connection timed out']):
+        return f"Email delivery delayed due to network timeout. Your {asset_id} alert was triggered. We'll continue trying to send the notification."
+    
+    # SSL/TLS errors (check before generic SMTP)
+    if any(keyword in error_lower for keyword in ['ssl', 'tls', 'certificate', '503']):
+        return f"Email notification failed due to security configuration. Your {asset_id} alert was triggered. Please contact support."
+    
+    # Authentication errors (only if it's ACTUALLY an auth error, not connection error mentioning credentials)
+    # Must have auth error codes OR explicit auth failure, but NOT connection errors
+    if any(keyword in error_lower for keyword in ['535', 'authentication failed', 'auth failed', 'invalid login', 'invalid password']):
+        if 'connect call failed' not in error_lower and 'errno 111' not in error_lower:
+            return f"Email notification failed due to configuration issue. Your {asset_id} alert was triggered. Please contact support to resolve this."
+    
+    # SMTP/Server errors (generic SMTP issues)
+    if any(keyword in error_lower for keyword in ['smtp', 'mail server', 'mail service']):
+        # But not if it's a connection error
+        if 'connect call failed' not in error_lower and 'errno 111' not in error_lower:
+            return f"Email service is experiencing issues. Your {asset_id} alert was triggered successfully, but notification email is delayed."
+    
+    # Rate limiting
+    if any(keyword in error_lower for keyword in ['rate limit', 'too many', '421', '450']):
+        return f"Email notification delayed due to high volume. Your {asset_id} alert was triggered. We'll send the notification shortly."
+    
+    # Recipient issues
+    if any(keyword in error_lower for keyword in ['recipient', 'invalid email', 'no such user', '550']):
+        return f"Could not deliver email notification for {asset_id} alert. Please verify your email address in profile settings."
+    
+    # Generic fallback for unknown errors
+    return f"Email notification for {asset_id} alert could not be delivered at this time. Your alert is still active and monitoring. Our team has been notified of this issue."
+
 @celery_app.task(queue="simple_task_queue")
 def check_smtp_task():
     try:
@@ -164,8 +208,8 @@ def notification_sender(self, alert_data):
                 print(f"|------ ALERT FOR {alert_data['asset_id']} FAILED!!! -------|")
                 print(f"Full error: {str(e)}")
                 
-                # Create user-friendly error message (don't expose technical details)
-                error_message = f"Failed to send email notification for {alert_data['asset_id']} price alert. Please contact support if this issue persists."
+                # Create user-friendly error message based on error type
+                error_message = _get_user_friendly_email_error(str(e), alert_data['asset_id'])
                 
                 notification = Notification(
                     user_id=alert_data["user_id"],
