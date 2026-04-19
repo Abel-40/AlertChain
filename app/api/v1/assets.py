@@ -23,7 +23,7 @@ router = APIRouter(prefix="/assets", tags=["assets"])
 # Setup logger
 logger = logging.getLogger(__name__)
 
-@router.get("/popular", response_model=APIResponse[List[AssetOutFromSearch]], dependencies=[Depends(rate_limit(limit=30, window=60))])
+@router.get("/popular", response_model=APIResponse[List[AssetOutFromSearch]], dependencies=[Depends(rate_limit(limit=60, window=60))])
 async def get_popular_assets(request: Request):
     redis = request.app.state.redis
     cached_data = await redis.get("popular_coins")
@@ -41,7 +41,7 @@ async def get_popular_assets(request: Request):
     return success_response(status_code=200, message="Fetched successfully", data=popular_coins)
 
 
-@router.get("/search", response_model=APIResponse[List[AssetOutFromSearch]], dependencies=[Depends(rate_limit(limit=20, window=60))])
+@router.get("/search", response_model=APIResponse[List[AssetOutFromSearch]], dependencies=[Depends(rate_limit(limit=40, window=60))])
 async def search_crypto(crypto_name: str, request: Request):
     cache_key = f"search:{crypto_name.lower()}"
     redis_client = request.app.state.redis
@@ -250,7 +250,7 @@ async def get_coin_details(
     )
 
 
-@router.post("/price/historical/{coingecko_id}", dependencies=[Depends(rate_limit(limit=10, window=300))])
+@router.post("/price/historical/{coingecko_id}", dependencies=[Depends(rate_limit(limit=60, window=60))])
 async def fetch_historical_prices(
     coingecko_id: str,
     duration: float = Query(

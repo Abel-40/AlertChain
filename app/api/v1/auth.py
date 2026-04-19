@@ -32,7 +32,7 @@ async def register_user(user_data:UserCreate, db:AsyncSession = Depends(get_db))
   except UserAlreadyExistError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail="Email already exist!!!")
       
-@router.post("/login/",response_model=APIResponse[UserOut],dependencies=[Depends(rate_limit(limit=5,window=60))])
+@router.post("/login/",response_model=APIResponse[UserOut],dependencies=[Depends(rate_limit(limit=10,window=60))])
 async def login_endpoint(user_data:OAuth2PasswordRequestForm = Depends(),db:AsyncSession = Depends(get_db)):
   try:
       user = await authenticate_user(db=db,email=user_data.username,password=user_data.password)
@@ -53,7 +53,7 @@ async def login_endpoint(user_data:OAuth2PasswordRequestForm = Depends(),db:Asyn
   except InvalidCredentialsError:
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Invalid Email or Password")
 
-@router.post("/refresh", dependencies=[Depends(rate_limit(limit=5, window=60))])
+@router.post("/refresh", dependencies=[Depends(rate_limit(limit=10, window=60))])
 async def refresh_login(request: Request, db: AsyncSession = Depends(get_db)):
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:

@@ -9,7 +9,7 @@ from app.services.profiles import get_or_create_user_profile, get_user_profile, 
 
 router = APIRouter(prefix="/profile", tags=["profiles"])
 
-@router.get("/", response_model=APIResponse[UserProfileOut], dependencies=[Depends(rate_limit(limit=30, window=60))])
+@router.get("/", response_model=APIResponse[UserProfileOut], dependencies=[Depends(rate_limit(limit=60, window=60))])
 async def get_profile(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -22,7 +22,7 @@ async def get_profile(
         "data": profile
     }
 
-@router.patch("/", response_model=APIResponse[UserProfileOut], dependencies=[Depends(rate_limit(limit=20, window=60))])
+@router.patch("/", response_model=APIResponse[UserProfileOut], dependencies=[Depends(rate_limit(limit=40, window=60))])
 async def update_profile(
     profile_data: UserProfileUpdate,
     db: AsyncSession = Depends(get_db),
