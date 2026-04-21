@@ -46,7 +46,6 @@ def fetch_popular_crypto(self):
         }
         for c in data
     ]
-    print("check check check check check")
     redis_client.set("popular_coins", orjson.dumps(coins), ex=600)
     return "Success"
    
