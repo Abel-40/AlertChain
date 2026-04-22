@@ -84,8 +84,11 @@ def send_email(self,email:str,name:str):
   asyncio.run(email_sender(subject="Welcome to AlertChain",recipients=[email],template_body_vars={"name":name,"dashboard_url":"http://127.0.0.0:3000/dashboard"},template_file_name="welcome.html"))
 
 @celery_app.task(bind=True,autoretry_for = (Exception,),retry_backoff=True,retry_backoff_max=600,max_retries=None,queue="simple_task_queue")
-def send_email_forget_password(self,reset_link:str,email:str):
-    asyncio.run(email_sender(subject="AlertChain Password Reset",recipients=[email],template_body_vars={"reset_link":reset_link},template_file_name="passreset.html"))
+def send_email_forget_password(self, reset_link: str, email: str, reset_code: str = None):
+    template_vars = {"reset_link": reset_link}
+    if reset_code:
+        template_vars["reset_code"] = reset_code
+    asyncio.run(email_sender(subject="AlertChain Password Reset",recipients=[email],template_body_vars=template_vars,template_file_name="passreset.html"))
 
 
 

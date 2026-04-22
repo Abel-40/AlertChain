@@ -14,6 +14,8 @@ class Settings(BaseSettings):
   ACCESS_TOKEN_KEY:str
   REFRESH_TOKEN_KEY:str
   ALGO:str
+  JWT_ISS: str = "crypto_mate"
+  JWT_AUD: str = "crypto_mate_users"
   EMAIL:str
   MAIL_PORT:str
   MAIL_SERVER:str

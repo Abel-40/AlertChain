@@ -47,6 +47,7 @@ class ForgotPassword(BaseModel):
 
 class ResetPassword(BaseModel):
     new_password: str
+    code: str
 
     @field_validator('new_password')
     @classmethod

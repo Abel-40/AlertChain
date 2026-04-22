@@ -48,14 +48,11 @@ async def toggle_alert_status(alert_id: UUID, user_id: UUID, db: AsyncSession):
     return alert
 
 async def delete_alert(alert_id: UUID, user_id: UUID, db: AsyncSession):
-    stmt = select(AlertRule).where(AlertRule.id == alert_id, AlertRule.user_id == user_id)
-    result = await db.scalars(stmt)
-    alert = result.first()
+    stmt = delete(AlertRule).where(AlertRule.id == alert_id, AlertRule.user_id == user_id)
+    result = await db.execute(stmt)
     
-    if not alert:
+    if result.rowcount == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
-        
-    await db.delete(alert)
     await db.commit()
     return True
 

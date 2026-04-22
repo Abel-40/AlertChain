@@ -37,14 +37,23 @@ def rate_limit(limit: int, window: int):
   
 async def get_current_user(request: Request, token:str = Depends(auth_scheme),db:AsyncSession= Depends(get_db)):
     credentials_exception = HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Invalid credentials")
-    
-    redis = request.app.state.redis
-    is_blacklisted = await redis.get(f"blacklist:{token}")
-    if is_blacklisted:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has been revoked.")
-
     try:
-        payload = jwt.decode(token, settings.ACCESS_TOKEN_KEY, algorithms=[settings.ALGO])
+        redis = request.app.state.redis
+        payload = jwt.decode(
+            token,
+            settings.ACCESS_TOKEN_KEY,
+            algorithms=[settings.ALGO],
+            audience=settings.JWT_AUD,
+            issuer=settings.JWT_ISS,
+        )
+
+        # check jti-based blacklist (safer than storing whole token string)
+        jti = payload.get("jti")
+        if jti:
+            is_blacklisted = await redis.get(f"blacklist:access_jti:{jti}")
+            if is_blacklisted:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has been revoked.")
+
         user_id = payload.get("sub")
         if not user_id or payload.get("type") != "access":
             raise credentials_exception
@@ -52,7 +61,5 @@ async def get_current_user(request: Request, token:str = Depends(auth_scheme),db
         if not user:
             raise credentials_exception
         return user
-    except PyJWTError as e:
-        print("JWT ERROR TYPE:", type(e).__name__)
-        print("JWT ERROR MSG:", str(e))
+    except PyJWTError:
         raise credentials_exception
